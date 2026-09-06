@@ -1,0 +1,4 @@
+interface:
+  display_name: "Parallel Program"
+  short_description: "Design and run a multi-agent lane programme"
+  default_prompt: "Use $parallel-program to turn this repository and my goals into a multi-agent, multi-session execution programme: lanes with exclusive ownership, named agents, a coordinator, an integrator, a board, checkpoints, handoffs, decisions and a changelog. Install it under Docs/Execution and give me the first message for each session."

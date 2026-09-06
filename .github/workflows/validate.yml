@@ -1,0 +1,78 @@
+name: validate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  self-test:
+    name: Validator fails closed
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Configure git for fixture repositories
+        run: |
+          git config --global user.email "ci@example.com"
+          git config --global user.name "CI"
+          git config --global init.defaultBranch main
+      - name: Mutation self-test
+        run: python3 scripts/validate_program.py --self-test
+
+  scaffold:
+    name: Scaffold renders a valid programme
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: skill
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build a throwaway target repository
+        run: |
+          git config --global user.email "ci@example.com"
+          git config --global user.name "CI"
+          git config --global init.defaultBranch main
+          mkdir -p target/src/example/core target/tests/example target/app
+          cd target
+          git init -q
+          echo x > src/example/core/a.py
+          echo x > tests/example/test_a.py
+          echo x > app/main.py
+          echo '# demo' > README.md
+          git add -A && git commit -qm init
+      - name: Init the registry
+        run: python3 skill/scripts/scaffold.py --root target --init --program ci-demo
+      - name: Point the sample registry at real files
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path("target/Docs/Execution/lanes.json")
+          r = json.loads(p.read_text())
+          r["sharedFiles"][0]["path"] = "app/main.py"
+          integrator = r["lanes"][1]
+          integrator["ownerPaths"] = ["Docs/Execution/CHANGELOG.md", "Docs/Execution/CHECKPOINTS.md",
+                                      "Docs/Execution/Manifests/**", "Docs/Execution/Handoffs/L0-integrator/**",
+                                      "app/**"]
+          r["machine"] = {"worktreeRoot": "/tmp/wt", "buildRoot": "/tmp/build", "notes": "ci"}
+          p.write_text(json.dumps(r, indent=2))
+          PY
+      - name: Render every document
+        run: python3 skill/scripts/scaffold.py --root target --apply-instructions
+      - name: Stage the rendered programme
+        run: git -C target add -A
+      - name: Validate it
+        run: python3 target/Docs/Execution/validate_program.py --root target
+      - name: No unrendered placeholders
+        run: |
+          if grep -rn '{{' target/Docs/Execution target/AGENTS.md target/CLAUDE.md; then
+            echo "unrendered placeholders found" >&2
+            exit 1
+          fi
+          echo "no unrendered placeholders"

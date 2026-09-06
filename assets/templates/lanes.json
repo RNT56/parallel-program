@@ -1,0 +1,125 @@
+{
+  "schemaVersion": 1,
+  "program": "{{PROGRAM}}",
+  "defined": "{{DATE}}",
+  "goal": "One sentence: what the programme delivers and how the owner will know.",
+  "authority": {
+    "roadmap": "Docs/Execution/ROADMAP.md",
+    "board": "Docs/Execution/PROGRESS.md",
+    "checkpoints": "Docs/Execution/CHECKPOINTS.md",
+    "roster": "Docs/Execution/ROSTER.md",
+    "coordination": "Docs/Execution/COORDINATION.md",
+    "decisions": "Docs/Execution/DECISIONS.md",
+    "changelog": "Docs/Execution/CHANGELOG.md",
+    "validator": "Docs/Execution/validate_program.py",
+    "note": "This registry says who may write where and which tasks each lane carries. It promotes no task state."
+  },
+  "taskSources": [
+    { "path": "Docs/Execution/TASKS.md", "pattern": "^### ([A-Z]{2,6}-\\d{3}) — " }
+  ],
+  "buildPolicy": "integrator-only",
+  "machine": {
+    "worktreeRoot": "/absolute/path/for/worktrees",
+    "buildRoot": "/absolute/path/for/builds",
+    "notes": "Disk, simulator, device, licence or cache constraints that every lane must respect."
+  },
+  "stages": {
+    "gates": "python3 Docs/Execution/validate_program.py && git diff --check",
+    "unit": "<command that runs the unit suites and prints an executed count>",
+    "integration": "<command for integration or UI suites>",
+    "release": "<command that produces the release artifact>"
+  },
+  "boardStates": ["CLAIMED", "IN_PROGRESS", "SOURCE_READY", "VERIFIED", "BLOCKED", "DEFERRED", "SUPERSEDED"],
+  "checkpoints": [
+    { "id": "CP0", "name": "Clean page", "verification": ["gates"], "exit": "Roadmap, registry, board, briefs and validator on main; owner paths overlap-free; build and worktree roots fixed." },
+    { "id": "CP1", "name": "First slices", "verification": ["gates", "unit"], "exit": "Every active lane has one vertical slice merged through the integrator; unit suites pass with zero skips." },
+    { "id": "CP2", "name": "Journeys", "verification": ["gates", "unit", "integration"], "exit": "End-to-end behaviour verified by integration suites; manifests applied once." },
+    { "id": "CP3", "name": "Candidate", "verification": ["gates", "unit", "integration", "release"], "exit": "Every in-scope task SOURCE_READY at one SHA; release artifact produced and inspected." }
+  ],
+  "sharedFiles": [
+    { "path": "path/to/app-entry-or-project-file", "owner": "L0-integrator", "claimants": ["L1-example"] }
+  ],
+  "plannedPaths": [],
+  "agentNaming": {
+    "sessionName": "<AGENT>-<phase>",
+    "handoffPath": "Docs/Execution/Handoffs/<lane-key>/<SESSION-NAME>.md"
+  },
+  "lanes": [
+    {
+      "key": "LC-coordination",
+      "name": "Coordination, arbitration and the programme record",
+      "status": "ACTIVE",
+      "role": "coordination",
+      "agentName": "PHAROS",
+      "phases": [1, 2, 3],
+      "brief": "Docs/Execution/Lanes/LC-coordination.md",
+      "branch": "main (writes only the plan and the record; never source)",
+      "ownerPaths": [
+        "Docs/Execution/ROADMAP.md",
+        "Docs/Execution/PROGRESS.md",
+        "Docs/Execution/ROSTER.md",
+        "Docs/Execution/COORDINATION.md",
+        "Docs/Execution/DECISIONS.md",
+        "Docs/Execution/TASKS.md",
+        "Docs/Execution/Lanes/**",
+        "Docs/Execution/Handoffs/README.md",
+        "Docs/Execution/Handoffs/LC-coordination/**",
+        "Docs/Execution/lanes.json",
+        "Docs/Execution/validate_program.py"
+      ],
+      "mutexes": ["Writes no production source, runs no build or test, merges no branch, promotes no state. It owns the map, not the territory."],
+      "tasks": [],
+      "checkpointDeliverables": {
+        "CP0": "Coordination model documented; decisions log opened; roster carries every agent.",
+        "CP1": "Open questions and conflicts answered mid-phase; briefs reconciled; readiness call before the integrator closes CP1."
+      }
+    },
+    {
+      "key": "L0-integrator",
+      "name": "Integration, verification and shared mutexes",
+      "status": "ACTIVE",
+      "role": "integration",
+      "agentName": "KEYSTONE",
+      "phases": [1, 2, 3],
+      "brief": "Docs/Execution/Lanes/L0-integrator.md",
+      "branch": "main (merges lane/* branches; no feature branch of its own)",
+      "ownerPaths": [
+        "Docs/Execution/CHANGELOG.md",
+        "Docs/Execution/CHECKPOINTS.md",
+        "Docs/Execution/Manifests/**",
+        "Docs/Execution/Handoffs/L0-integrator/**",
+        ".github/**"
+      ],
+      "mutexes": ["The only agent that runs a stage, merges into main, applies a manifest, edits a shared file it owns, or promotes a canonical state."],
+      "tasks": [],
+      "checkpointDeliverables": {
+        "CP0": "This plan on main; roots verified; gates stage run.",
+        "CP1": "Lanes merged serially; unit stage run; changelog entry; lanes told to rebase."
+      }
+    },
+    {
+      "key": "L1-example",
+      "name": "Example delivery lane",
+      "status": "ACTIVE",
+      "role": "delivery",
+      "agentName": "MERIDIAN",
+      "phases": [1, 2, 3],
+      "brief": "Docs/Execution/Lanes/L1-example.md",
+      "branch": "lane/example",
+      "ownerPaths": ["src/example/**", "tests/example/**"],
+      "excludedPaths": [],
+      "upstreamAgents": [],
+      "tasks": ["EX-001"],
+      "subTeams": [
+        { "name": "core", "files": "src/example/core/**", "tasks": ["EX-001"] }
+      ],
+      "checkpointDeliverables": {
+        "CP1": "One vertical slice of EX-001 with failure-path tests, marked NOT RUN."
+      },
+      "mutexes": []
+    }
+  ],
+  "dependencies": [
+    { "neededBy": "L1-example", "from": "L0-integrator", "what": "Hunk in the shared app-entry file", "why": "Single writer" }
+  ]
+}
