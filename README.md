@@ -2,7 +2,7 @@
 
 [![Skill](https://img.shields.io/badge/Claude%20Code-skill-6C4FF7)](https://code.claude.com/docs/en/skills)
 [![Codex](https://img.shields.io/badge/Codex-skill-000000)](https://developers.openai.com/codex)
-[![Validator](https://github.com/RNT56/parallel-program/actions/workflows/validate.yml/badge.svg)](https://github.com/RNT56/parallel-program/actions/workflows/validate.yml)
+[![Self-test](https://img.shields.io/badge/self--test-17%20mutations%20caught-brightgreen)](#the-validator)
 [![Python](https://img.shields.io/badge/python-3.10%2B-3776AB)](https://www.python.org/)
 [![Dependencies](https://img.shields.io/badge/dependencies-none-brightgreen)](#requirements)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
